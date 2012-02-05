@@ -97,11 +97,11 @@ let add_boilerplate backend out gr =
   add_to_epilogue gr (boilerplate_vary ^ boilerplate_shared)
 
 
-let gil_transducer =
+let gil_transducer is_sv_known =
   if !Compileopt.use_fsm then
-    (fun is_sv_known -> Fsm.try_fsm (Fsm.fsm_transducer is_sv_known))
+    Fsm.try_fsm (Fsm.fsm_transducer is_sv_known)
   else
-    (fun is_sv_known -> Fsm.try_fst (Fsm.fsm_transducer is_sv_known))
+    Fsm.try_fst (Fsm.fsm_transducer is_sv_known)
 
 let print_prologue ch gr =
   List.iter begin function
