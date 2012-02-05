@@ -81,7 +81,7 @@ FRONT_END_SOURCES := compileopt.ml variables.ml tgraph.ml meta_prog.ml tyspec.ml
                      coroutine.ml replay.ml \
                      ty_infer.ml lift.ml fsm.ml dearrow.ml \
 		     extract_grammar.ml rfc.ml ocaml_lexer.mll ocamllex_lexer.mll yakker_grammar.ml \
-                     cmdline.ml gil_gen.ml version.ml lexutil.ml lookahead.ml main.ml
+                     cmdline.ml gil_gen.ml version.ml lexutil.ml lookahead.ml module_gen.ml main.ml
 FRONT_END_MLL_SOURCES := $(filter %.mll, $(FRONT_END_SOURCES))
 FRONT_END_ML_SOURCES := $(FRONT_END_MLL_SOURCES:.mll=.ml) $(filter %.ml, $(FRONT_END_SOURCES))
 FRONT_END_CMOS := $(FRONT_END_ML_SOURCES:.ml=.cmo)

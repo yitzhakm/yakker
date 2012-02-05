@@ -948,3 +948,25 @@ let remove_CallEps() =
       "perl -pe 's/^([0-9]+)\\s+([0-9]+)\\s+%d\\b.*$/\\1 \\2 0 0/g'" a in
   let callepsarc = 1 in (* NB must force the CallEps arc to be encoded as 1, see init_nfa above *)
   (make_Epsilon_ZERO callepsarc)
+
+
+(**
+ * Some convenience functions handling nitty-gritty of interacting with FSM/FST
+ *)
+
+let try_fsm f out gr = (* FSM version *)
+  Util.pipe_in_out
+    (Printf.sprintf
+       "fsmcompile | fsmrmepsilon | fsmdeterminize | fsmprint | %s |fsmcompile | fsmrmepsilon | fsmdeterminize | fsmminimize | fsmprint"
+       (remove_CallEps()))
+    (fun w -> grammar_fsm w gr.Gul.gildefs)
+    (fun r -> f gr r out)
+
+let try_fst f out gr = (* OpenFST version *)
+  Util.pipe_in_out
+    (Printf.sprintf
+        "fstcompile --acceptor | fstrmepsilon | fstdeterminize | fstprint --acceptor | %s |fstcompile --acceptor | fstrmepsilon | fstdeterminize | fstminimize /dev/stdin | fstprint --acceptor"
+       (remove_CallEps())
+    )
+    (fun w -> grammar_fsm w gr.Gul.gildefs)
+    (fun r -> f gr r out)
