@@ -81,7 +81,7 @@ let ocaml2bnf s_ocaml =
 
 (* We also need fresh variables *)
 (* Assume user doesn't use _ in front of their names *)
-let fresh() = bnf2ocaml (Printf.sprintf "_x%d" (postincr counter))
+let fresh () = bnf2ocaml (Printf.sprintf "_x%d" (postincr counter))
 let freshn base = bnf2ocaml (Printf.sprintf "_%s%d" base (postincr counter))
 
 let fresh_nonterminal () = Printf.sprintf "_%d" (postincr counter)

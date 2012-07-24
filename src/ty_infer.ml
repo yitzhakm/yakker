@@ -136,11 +136,12 @@ end
 
 module C = Context
 
-let inf_ty_of_expr (g : C.t) e = fresh_tyvar ()
+let inf_ty_of_expr (_ : C.t) e = fresh_tyvar ()
 let nonterm_tyvar nt = "'yk_" ^ Variables.bnf2ocaml nt ^ "_result"
 let nonterm_arg_tyvar nt = "'yk_" ^ Variables.bnf2ocaml nt ^ "_arg"
 
-(** Elaborate an unannotated right-side to one with type annotations. *)
+(** Elaborate an unannotated right-side to one with type annotations
+    and collection type constraints in the process. *)
 let elaborate g r =
   let rec _e g r =
     match r.r with
@@ -222,6 +223,7 @@ let elaborate g r =
 let subs_apply_ty s ty = Util.option ty string_of_uterm (subs_lookup s ty)
 let subs_apply_attr s a = {a with inf_type = Util.option_map (subs_apply_ty s) a.inf_type}
 
+(** [subs_apply s r] applies substitution [s] to the type annotations in [r]. *)
 let subs_apply s r =
   let rec _s r =
     match r.r with
@@ -280,6 +282,7 @@ let debug gr =
   gr.ds <- ds
 
 let infer print_subs gr =
+  (* Collect constraints and updated definitions. *)
   let cs, ds = List.split begin
     List.map
       (function
@@ -305,6 +308,8 @@ let infer print_subs gr =
     gr.ds
   end in
   let c = List.flatten cs in
+  (* Attempt to unify constraints to find a substitution (and
+     normalize said substitution if it exists). *)
   let s = match unify c with
     | UFailure (t1,t2) -> failwith "constraint-solving failed"
     | USuccess s -> subs_expand s in
@@ -313,6 +318,7 @@ let infer print_subs gr =
       Printf.eprintf "\nSubstitution:\n";
       subs_print s;
     end;
+  (* Update type annotations in the grammar based on the substitution. *)
   let ds =
     List.map begin function
       | RuleDef(nt, r, a) ->

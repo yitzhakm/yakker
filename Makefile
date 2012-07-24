@@ -157,6 +157,8 @@ TIME_EXECUTION = time -p
 all: yak.cma yak.cmxa yakker
 
 .PHONY: install
+
+# Install yakker libs (ocamlfind install) and yakker app (godi_install yakker).
 install:
 	@if test -f ${XARCHIVE}; then\
 	  extralib="${XARCHIVE} ${ARCHIVE_base}.a";\
@@ -658,6 +660,7 @@ oparser: opbdriver.cmo
            $(OCAML_COMP_DIR)/warnings.cmo \
            $(OCAML_COMP_DIR)/location.cmo \
            $(OCAML_COMP_DIR)/syntaxerr.cmo \
+           $(OCAML_COMP_DIR)/longident.cmo \
            $(OCAML_COMP_DIR)/parser.cmo \
            $(OCAML_COMP_DIR)/lexer.cmo \
            $(OCAML_COMP_DIR)/parse.cmo \
@@ -670,6 +673,7 @@ oparser.opt: opbdriver.cmx
            $(OCAML_COMP_DIR)/warnings.cmx \
            $(OCAML_COMP_DIR)/location.cmx \
            $(OCAML_COMP_DIR)/syntaxerr.cmx \
+           $(OCAML_COMP_DIR)/longident.cmx \
            $(OCAML_COMP_DIR)/parser.cmx \
            $(OCAML_COMP_DIR)/lexer.cmx \
            $(OCAML_COMP_DIR)/parse.cmx \

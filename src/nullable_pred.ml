@@ -233,7 +233,7 @@ let rec eps_is_eps_eq =
 let noneps_is_eps_eq r = false
 
 (** Rewrite a gil rhs based on rules relating to "fail" and epsilon.
-    The rewrite rules relating to epsilon depend on a predicate [is_irr]
+    The rewrite rules relating to epsilon depend on a predicate [is_eps_eq]
     to determine whether the rule is equivalent to epsilon.
 *)
 let rewrite nt_defs is_eps_eq r =
@@ -314,7 +314,8 @@ let prep_for_inlining nt arg_opt merge_opt r =
   else
     When_special (callc nt arg_opt merge_opt)
 
-(* TODO_DOC:...
+(* This function performs two tasks: first, replace each nonterminal A with its
+   equivalent definition (A_s | A_eps).
 
    The inlining ensures that no regular nonterminal names will remain. All
    such references should have been split into substantive names and
@@ -349,7 +350,7 @@ let inline_eps_and_rename eps_defs r =
 (** [rewrite_recursion tbl] rewrites recursive symbols recorded in
     [tbl] to fail.  Given a grammar in which definitions do not
     contain alternatives, any recursive symbols must be empty. So,
-    we can rewrite them accordingly. This rewriting it important if
+    we can rewrite them accordingly. This rewriting is important if
     we want to translate the grammar to a recursive-descent parser.
 
     If the input grammar in [tbl] contains alternatives (except in
@@ -360,7 +361,7 @@ let inline_eps_and_rename eps_defs r =
     negative lookahead does not force a nonterminal to have an empty
     language. Simply put, if the language is really empty, then the
     lookahead will always *succeed*, so it doesn't contribute to the
-    language's emptyness. Therefore, we don't even check right-sides
+    language's emptiness. Therefore, we don't even check right-sides
     in negative lookahead positions, so the presence of alts therein
     is irrelevant.
 *)
@@ -435,16 +436,20 @@ let eliminate_nullables gr =
      case where alternatives have not, or cannot, be eliminated.  *)
   rewrite_recursion eg_tbl;
 
+  (* Step 4: Merge subgrammars [sg] and [eg] into the master grammar [ds]. *)
   let ds = List.map (fun (n,r) -> (n, inline_eps_and_rename eps_defs_total r)) sg in
 
-  (* Rewrite subs. entries to percolate [fail]. *)
+  (* Step 5: Rewrite entries to percolate [fail] for substantive cases. *)
   let ds_tbl = Hashtbl.create 101 in
   let ds_defs = Hashtbl.find ds_tbl in
   List.iter (fun (n,r) -> Hashtbl.add ds_tbl n r) ds;
   List.iter (fun (n,_) ->
                let r = rewrite ds_defs noneps_is_eps_eq (ds_defs n) in
                Hashtbl.replace ds_tbl n r) ds;
+
   let ds = List.rev_map (fun (n,_) -> (n, fix_fail (ds_defs n))) ds in
+
+  (* Rewrite the start definition. *)
   let start_def = inline_eps_and_rename eps_defs_total (ns_inject start_def) in
   let ds = List.rev ((gr.Gul.start_symbol, start_def) :: ds) in
   ds, eg_tbl
