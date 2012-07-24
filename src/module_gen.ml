@@ -13,7 +13,42 @@ type backend = Cmdline.backend =
                        to use more liberal (PADS-style) star. *)
   | Trans_BE (** Transducer backend. *)
 
-let mk_trans_bp = Printf.sprintf "
+let mk_trans_bp_v2 = Printf.sprintf "
+let f = fun (type ev)
+  (sv0 : ev svt) (sv_compare : ev svt -> ev svt -> int)
+  (program : (int * ev svt instruction list) list)
+  (dc : ev svt action2)
+  (dr : ev svt binder2) g ->
+
+let module M = Yak.Pami.Wfe.Make(
+    struct
+      module Parse_engine = %s
+      module Term_language = %s
+      let start_symbol_name = %S
+
+      let sv0 = sv0
+      module Semval =
+      struct
+        type t = ev svt
+        let cmp = sv_compare
+        include %s
+      end
+
+      let program = program
+      let get_symb_action = get_symb_action
+      let get_symb_start = get_symb_start
+      let min_symbol = %d
+      let num_symbols = num_symbols
+      let opt_mode = %s
+      let default_call = dc
+      let default_ret = dr
+    end) in
+M.gen_parse g
+
+let parse = f sv0 sv_compare program %s %s %s
+"
+
+let mk_trans_bp_v1 = Printf.sprintf "
 module M = Yak.Pami.Wfe.Make(
     struct
       module Parse_engine = %s
@@ -40,7 +75,7 @@ module M = Yak.Pami.Wfe.Make(
 let parse = M.gen_parse %s
 "
 
-let trans_bp gr ppf =
+let trans_bp gr ppf mk_trans_bp =
   let parse_engine =
     match !Compileopt.gen_nullpreds, !Compileopt.earley_ds with
       | true, Compileopt.Sparse_eds -> "Yak.Engine"
@@ -73,7 +108,7 @@ let trans_bp gr ppf =
     Fsm.default_binder_tx
     ppf
 
-let add_boilerplate backend out gr =
+let add_boilerplate backend gr =
   if backend = Wadler_BE then ()
   else
   (* The [unit_history] flag overrides the standard history relevance. *)
@@ -87,7 +122,11 @@ let add_boilerplate backend out gr =
       "(fun ykinput x -> ())" in
   let boilerplate_vary =
     match backend with
-      | Trans_BE -> trans_bp gr post_parse_function
+      | Trans_BE ->
+          trans_bp gr post_parse_function
+            (if !Compileopt.infer_types_in_two_passes
+             then mk_trans_bp_v1
+             else mk_trans_bp_v2)
       | Fun_BE | Peg_BE _ ->
           "\nlet parse = Yak.Pami.mk_parse_fun __parse " ^ post_parse_function
       | Wadler_BE -> "" in
@@ -138,7 +177,7 @@ let do_compile is_sv_known backend out gr =
           print_prologue ();
           gil_transducer is_sv_known out gr);
 
-    add_boilerplate backend out gr;
+    add_boilerplate backend gr;
 
     if is_sv_known then
       begin
@@ -179,5 +218,5 @@ let do_compile_for_arrow backend out gr =
         end;
     );
 
-    add_boilerplate backend out gr;
+    add_boilerplate backend gr;
     print_epilogue out gr
