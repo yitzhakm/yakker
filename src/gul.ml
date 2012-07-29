@@ -235,12 +235,14 @@ let mkGrammar ds m p e pd =
    precs = pd;
   }
 
+(** Prepend [s] to the prologue *)
 let add_to_prologue gr s =
   gr.prologue <- (Ocaml s)::gr.prologue
 
 let add_many_to_prologue gr xs =
   gr.prologue <- List.fold_left (fun pr s ->  (Ocaml s) :: pr) gr.prologue xs
 
+(** Prepend [s] to the epilogue *)
 let add_to_epilogue gr s =
   gr.epilogue <- (Ocaml s)::gr.epilogue
 

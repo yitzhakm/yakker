@@ -73,9 +73,12 @@ let pipe_in_out command send_in get_out =
   get_out r;
 
   (* Clean up *)
-  (try
-    ignore(Unix.close_process (r,w))
-  with _ -> ())
+  begin match Unix.close_process (r,w) with
+    | Unix.WEXITED 0 ->   ()
+    | Unix.WEXITED x ->   failwith (Printf.sprintf "ocaml exited with %d\n" x)
+    | Unix.WSIGNALED x -> failwith (Printf.sprintf "ocaml exited with signal %d\n" x)
+    | Unix.WSTOPPED x ->  failwith (Printf.sprintf "ocaml stopped with signal %d\n" x)
+  end
 
 (** Like [pipe_in_out], but returns the result from [get_out].
     @raise [Failure] if process exits abnormally. *)

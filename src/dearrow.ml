@@ -516,7 +516,12 @@ module L_combs = struct
   let hist_in_pat_wild = "_"
   let hist_out_exp = "h"
   let hist_new_exp = "_e"
-  let hist_merge_exp = gen "_m %d"
+  let hist_merge_exp lbl =
+    if !Compileopt.eta_expand_tx_bindings then
+      gen "fun p h1 h2 -> _m %d p h1 h2" lbl
+    else
+      gen "_m %d" lbl
+
 
   let mk_box _ _ _ _ =
     Util.impossible "Dearrow.LCombs.mk_box: grammar not early-relevant."
