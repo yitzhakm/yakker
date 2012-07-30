@@ -664,6 +664,10 @@ let varname prefix eta_expand =
            Hashtbl.add tbl_varnames exp_str v;
            v)
 
+(** Everything is printed to [outch] *but* the transducer itself.
+    The expression encoding the transducer is printed to a (fresh)
+    [Buffer.t] which is then returned, thereby
+    allowing the client to control when and where to print the transducer. *)
 let fsm_transducer is_sv_known gr inch outch =
 
   let tbl_ntnames = Hashtbl.create 11 in
@@ -921,8 +925,10 @@ let fsm_transducer is_sv_known gr inch outch =
     else branches2instr1 in
 
   (* Finally, print the automaton itself. *)
-  Printf.fprintf outch "open Yak.Pam_internal\n";
-  Printf.fprintf outch "let program = [\n";
+  let avg_line_length = 20 in           (* an educated guess. *)
+  let outbuf = Buffer.create (Hashtbl.length tbl_instrs * avg_line_length) in
+  Printf.bprintf outbuf "let open Yak.Pam_internal in\n";
+  Printf.bprintf outbuf "[\n";
   Hashtbl.iter
     (fun a (eats, ops, dbranches) ->
        (* compare dbranches by generating function first and datatype second. *)
@@ -935,11 +941,11 @@ let fsm_transducer is_sv_known gr inch outch =
          | [] -> invalid_arg "Empty list is an invalid group"
          | ((f1,c,_,_)::xs) as ys -> (f1, c.cty, map extract ys) in
        let db_instrs = map (branches2instr $ f) db_groups in
-       Printf.fprintf outch "(%d, [%s]);\n" a
+       Printf.bprintf outbuf "(%d, [%s]);\n" a
          (String.concat ";" (eats @ ops @ db_instrs)))
     tbl_instrs;
-  Printf.fprintf outch "]\n";
-  ()
+  Printf.bprintf outbuf "]\n";
+  outbuf
 
 let remove_CallEps() =
   let make_Epsilon_ZERO a = (* return a perl command that turns every transition
@@ -955,7 +961,7 @@ let remove_CallEps() =
  *)
 
 let try_fsm f out gr = (* FSM version *)
-  Util.pipe_in_out
+  Util.pipe_in_out_result
     (Printf.sprintf
        "fsmcompile | fsmrmepsilon | fsmdeterminize | fsmprint | %s |fsmcompile | fsmrmepsilon | fsmdeterminize | fsmminimize | fsmprint"
        (remove_CallEps()))
@@ -963,7 +969,7 @@ let try_fsm f out gr = (* FSM version *)
     (fun r -> f gr r out)
 
 let try_fst f out gr = (* OpenFST version *)
-  Util.pipe_in_out
+  Util.pipe_in_out_result
     (Printf.sprintf
         "fstcompile --acceptor | fstrmepsilon | fstdeterminize | fstprint --acceptor | %s |fstcompile --acceptor | fstrmepsilon | fstdeterminize | fstminimize /dev/stdin | fstprint --acceptor"
        (remove_CallEps())
