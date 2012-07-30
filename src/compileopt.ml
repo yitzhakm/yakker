@@ -75,19 +75,29 @@ let earley_ds = ref Sparse_eds
   (** Designates the choice of the engine's (Earley) data structures.
       Uses sparse sets by default.*)
 
-let eta_expand_tx_bindings = ref false
+let eta_expand_tx_bindings = ref true
   (** Flag: Eta-expand bindings for actions, predicates, boxes,
       etc. used in transducer representation. Avoids causing compiler
       error relating to ungeneralizable type variable. *)
 
-let memoize_eps_parsers = ref true
+let memoize_eps_parsers = ref false
   (** Flag: Insert code into epsilon-grammar parsing functions to
       memoize calls. Memoization is not necessary, because epsilon
       grammars cannot be left-recursive. It is only a potential
       optimization. In many tested cases, it actually causes a slow
-      down. *)
+      down.
 
-let infer_types_in_two_passes = ref true
+      N.B. This flag is incompatible with disabling [infer_types_in_two_passes] *)
+
+let infer_types_in_two_passes = ref false
+
+
+let check_consistency () =
+  if !memoize_eps_parsers && not !infer_types_in_two_passes then
+    Some (Printf.sprintf "Null-predicate memoization is not supported with one-pass transducer generation.")
+  else if !wrap_codegen_in_module && not !infer_types_in_two_passes then
+    Some (Printf.sprintf "Sealing generated code in sub-module is not supported with one-pass transducer generation.")
+  else None
 
 (*
   testing-related flags

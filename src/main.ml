@@ -111,7 +111,11 @@ let vprintf x = Logging.log Logging.Features.verbose x
 let outch = ref stdout
 
 let cmd, files, roots, backend = Cmdline.process()
-let files = if files=[] then ["/dev/stdin"] else files
+let files = if files=[] then ["/dev/stdin"] else files ;;
+
+match Compileopt.check_consistency () with
+  | None -> ()
+  | Some s -> prerr_endline "Error: inconsistent commmand-line options."; prerr_endline s; exit 1
 
 let do_phase name thunk =
   vprintf "%s...%!" name;
